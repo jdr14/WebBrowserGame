@@ -2,20 +2,38 @@
 
 <canvas id="gameGraphics" width="800" height="600"> </canvas>
 
+
 <!-- Use this tag to wrap around javascript -->
 <script>  
     
+    // Create Global variables within the context of this script to be set as objects later...
     var canvas;
-    var canvasContext
+    var canvasContext;
 
-    // The following ensures that the function will only execute after the window is finished loading.
-    
+    // Placeholder variable to store the current ball's position
+    var ballX = 50;
+    var ballSpeedX = 5;
+
+    // Only execute after the entire window has loaded.
     window.onload = function() {
-    	console.log("Hello World!");  // Log to the console
+    	//console.log("Starting the game now");  // Initial message to the console
+
     	canvas = document.getElementById('gameGraphics');
     	canvasContext = canvas.getContext('2d');
-    	canvasContext.fillStyle = 'black';
-    	canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+        drawShapes();
+    }
+
+    function updatePositions() {
+    	ballX = ballX + ballSpeedX;
+    }
+
+    function drawShapes() {
+        canvasContext.fillStyle = 'black';  // Color of background is black
+    	canvasContext.fillRect(0, 0, canvas.width, canvas.height); 
+    	canvasContext.fillStyle = 'red';
+    	canvasContext.fillRect(30, 50, 50, 50); 
+    	canvasContext.fillStyle = 'white';
+    	canvasContext.fillRect(10, 300, 20, 75);
     }
 	
 </script>  <!-- End Javascript -->
