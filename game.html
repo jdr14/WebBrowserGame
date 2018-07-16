@@ -18,15 +18,17 @@
     // Create Global variables within the context of this script to be set as objects later...
     var canvas, canvasContext;
 
+    var backgroundColor = 'black';
+
     // Placeholder variable to store the current ball's position
     var ballSpeedX = 5;
+    var ballSpeedY = 5;
     var ballAttributes = {
-    	width: 20,
-    	height: 20,  // Keep aspect ratio
+        radius: 15,
     	positionX: 20,  // This is the initial position of the ball
     	positionY: 50, 
         velocityX: ballSpeedX,
-        velocityY: 0,
+        velocityY: ballSpeedY,
         color: 'red',
     };
     
@@ -58,46 +60,79 @@
                 updatePositions();
         	}, 1000/framesPerSecond);  // 1000 ms / FPS
     }
-
-    function updatePositions() 
+    
+    function updateBallPositionX()
     {
-    	// Update the position of the ball according to the velocity (i.e. move the ball)
+    	// Update the X position of the ball
     	ballAttributes.positionX = ballAttributes.positionX + ballAttributes.velocityX;
-        
-        // The purpose of the following code is to bounce the ball off the wall
-        if (ballAttributes.positionX + ballAttributes.width == canvas.width)
+
+    	// Bounce the ball horizontally
+        if (ballAttributes.positionX + ballAttributes.radius == canvas.width)
         {
             ballAttributes.velocityX = -ballSpeedX;
         }
-        else if (ballAttributes.positionX == 0)
+        else if (ballAttributes.positionX == ballAttributes.radius)
         {
         	ballAttributes.velocityX = ballSpeedX;
         }
     }
+    
+    function updateBallPositionY()
+    {
+    	// Update the Y position of the ball
+        ballAttributes.positionY = ballAttributes.positionY + ballAttributes.velocityY;
+      
+        // Bounce the ball vertically
+        if (ballAttributes.positionY + ballAttributes.radius == canvas.height)
+        {
+        	ballAttributes.velocityY = -ballSpeedY;
+        }
+        else if (ballAttributes.positionY == ballAttributes.radius)
+        {
+        	ballAttributes.velocityY = ballSpeedY;
+        }
+    }
+
+    function updatePositions() 
+    {
+        updateBallPositionX();
+        updateBallPositionY();
+    }
 
     function drawShapes() 
     {
-    	colorRect(0, 0, canvas.width, canvas.height, 'black');
-    	colorRect(
-    		ballAttributes.positionX,
-    		ballAttributes.positionY,
-    		ballAttributes.width,
-    		ballAttributes.height,
-    		ballAttributes.color,
-    	);
-    	colorRect(
+    	// Create the background
+    	colorRectangle(0, 0, canvas.width, canvas.height, backgroundColor);
+        
+        // Create a paddle
+    	colorRectangle(
     		paddleAttributes.positionX,
     	    paddleAttributes.positionY,
     	    paddleAttributes.width,
     	    paddleAttributes.height,
     	    paddleAttributes.color,
     	);
+
+    	colorCircle(
+    		ballAttributes.positionX,
+    		ballAttributes.positionY,
+            ballAttributes.radius,
+            ballAttributes.color,
+    	);
     }
 
-    function colorRect(leftX, topY, width, height, color) 
+    function colorRectangle(leftX, topY, width, height, color) 
     {
         canvasContext.fillStyle = color;
         canvasContext.fillRect(leftX, topY, width, height);
+    }
+
+    function colorCircle(centerX, centerY, radius, color)
+    {   
+    	canvasContext.fillStyle = color;
+    	canvasContext.beginPath();
+    	canvasContext.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
+    	canvasContext.fill();
     }
 	
 </script>  <!-- End Javascript -->
