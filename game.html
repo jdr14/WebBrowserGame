@@ -1,8 +1,23 @@
-<html>
+<html>  <!-- Begin the html doc -->
+
+<canvas id="gameGraphics" width="800" height="600"> </canvas>
 
 <!-- Use this tag to wrap around javascript -->
 <script>  
-	console.log("Hello World!");  // Log to the console
-</script>
+    
+    var canvas;
+    var canvasContext
 
-</html>
+    // The following ensures that the function will only execute after the window is finished loading.
+    
+    window.onload = function() {
+    	console.log("Hello World!");  // Log to the console
+    	canvas = document.getElementById('gameGraphics');
+    	canvasContext = canvas.getContext('2d');
+    	canvasContext.fillStyle = 'black';
+    	canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+    }
+	
+</script>  <!-- End Javascript -->
+
+</html>  <!-- End -->
