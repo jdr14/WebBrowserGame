@@ -1,41 +1,111 @@
 <html>  <!-- Begin the html doc -->
 
-<canvas id="gameGraphics" width="800" height="600"> </canvas>
+<canvas id="gameGraphics", width="800", height="600"> </canvas>
 
+<!-- Add CSS styling to auto fit the window to screen -->
+<!--
+<style>
+    #gameGraphics {
+        width: 100%;
+        height: 100%;
+    }
+</style>
+-->
 
 <!-- Use this tag to wrap around javascript -->
 <script>  
     
     // Create Global variables within the context of this script to be set as objects later...
-    var canvas;
-    var canvasContext;
+    var canvas, canvasContext;
 
     // Placeholder variable to store the current ball's position
-    var ballX = 50;
     var ballSpeedX = 5;
+    var ballAttributes = {
+    	width: 20,
+    	height: 20,  // Keep aspect ratio
+    	positionX: 20,  // This is the initial position of the ball
+    	positionY: 50, 
+        velocityX: ballSpeedX,
+        velocityY: 0,
+        color: 'red',
+    };
+    
+    var paddleSpeedY = 0;
+    var paddleAttributes = {
+        width: 15,
+        height: 75,  // Keep the aspect ratio
+        positionX: 10,
+        positionY: 300,
+        velocityY: paddleSpeedY,
+        color: 'white',
+    };
 
     // Only execute after the entire window has loaded.
-    window.onload = function() {
-    	//console.log("Starting the game now");  // Initial message to the console
+    window.onload = function() 
+    {
+    	console.log("Starting the game now.");  // Initial message to the console
 
     	canvas = document.getElementById('gameGraphics');
     	canvasContext = canvas.getContext('2d');
-        drawShapes();
+    	console.log("Canvas and canvasContext successfully created.")
+        
+    	var framesPerSecond = 60;
+    	console.log("Starting ball movement now.")
+        setInterval(
+        	function() // Create an inline function to keep code clean and concise
+        	{
+                drawShapes();
+                updatePositions();
+        	}, 1000/framesPerSecond);  // 1000 ms / FPS
     }
 
-    function updatePositions() {
-    	ballX = ballX + ballSpeedX;
+    function updatePositions() 
+    {
+    	// Update the position of the ball according to the velocity (i.e. move the ball)
+    	ballAttributes.positionX = ballAttributes.positionX + ballAttributes.velocityX;
+        
+        // The purpose of the following code is to bounce the ball off the wall
+        if (ballAttributes.positionX + ballAttributes.width == canvas.width)
+        {
+            ballAttributes.velocityX = -ballSpeedX;
+        }
+        else if (ballAttributes.positionX == 0)
+        {
+        	ballAttributes.velocityX = ballSpeedX;
+        }
     }
 
-    function drawShapes() {
-        canvasContext.fillStyle = 'black';  // Color of background is black
-    	canvasContext.fillRect(0, 0, canvas.width, canvas.height); 
-    	canvasContext.fillStyle = 'red';
-    	canvasContext.fillRect(30, 50, 50, 50); 
-    	canvasContext.fillStyle = 'white';
-    	canvasContext.fillRect(10, 300, 20, 75);
+    function drawShapes() 
+    {
+    	colorRect(0, 0, canvas.width, canvas.height, 'black');
+    	colorRect(
+    		ballAttributes.positionX,
+    		ballAttributes.positionY,
+    		ballAttributes.width,
+    		ballAttributes.height,
+    		ballAttributes.color,
+    	);
+    	colorRect(
+    		paddleAttributes.positionX,
+    	    paddleAttributes.positionY,
+    	    paddleAttributes.width,
+    	    paddleAttributes.height,
+    	    paddleAttributes.color,
+    	);
+    }
+
+    function colorRect(leftX, topY, width, height, color) 
+    {
+        canvasContext.fillStyle = color;
+        canvasContext.fillRect(leftX, topY, width, height);
     }
 	
 </script>  <!-- End Javascript -->
 
 </html>  <!-- End -->
+
+
+
+
+
+
