@@ -20,22 +20,36 @@
     // Variable declarations (not initializations) in JS are stored in memory at compile time (hoisting)
     const TRACK_BY_MOUSE = true;
     const BACKGROUND_COLOR = 'black';
-    const NET_COLOR = 'blue';
+    const NET_COLOR = 'white';
     const NET_THICKNESS = 2;
-    const NET_OFFSET = 10;
+    const NET_HEIGHT = 25;
     
-    const INITIAL_PADDLE_POSITION_Y = 300;
-    const PADDLE_HEIGHT = 90;
-    const PADDLE_WIDTH = 15;
-    const PADDLE_1_COLOR = 'green';
-    const PADDLE_2_COLOR = PADDLE_1_COLOR;
-
     const INITIAL_BALL_SPEED_X = -5; 
-    const INITIAL_BALL_SPEED_Y = -5; 
+    const INITIAL_BALL_SPEED_Y = -2; 
     const INITIAL_BALL_POSITION_X = 400;
     const INITIAL_BALL_POSITION_Y = 300;
     const BALL_RADIUS = 15;
     const BALL_COLOR = 'red';
+
+    const INITIAL_PADDLE_POSITION_Y = 300;
+    const PADDLE_HEIGHT = 90;
+    const PADDLE_WIDTH = 10;
+    const PADDLE_1_COLOR = 'white';
+    const PADDLE_2_COLOR = PADDLE_1_COLOR;
+    const PADDLE_END_PADDING = BALL_RADIUS * 2;
+    const MIDDLE_PADDLE_SEGMENT = 20;  // The height of the middle of the paddle
+    
+    const SCOREBOARD_COLOR = '';
+    const WINNING_SCORE = 3;  // Number of points to win!
+    var TWO_PLAYER = false;  // Option to play two player local or play the built in AI
+    var DIFFICULTY = {
+    	EASY: 0.2,
+    	MEDIUM: 0.4,
+    	HARD: 0.6,
+    	EXPERT: 0.8,
+    	IMPOSSIBLE: 1.0,
+    };
+    var COMPUTER_DIFFICULTY = DIFFICULTY.EXPERT;
 
     var ball = {
         radius: BALL_RADIUS,
@@ -45,13 +59,14 @@
         velocityY: INITIAL_BALL_SPEED_Y,
         color: BALL_COLOR,
     };
-   
+
     var p1 = {
         width: PADDLE_WIDTH,
         height: PADDLE_HEIGHT,  // Keep the aspect ratio
         positionX: 5,
         positionY: INITIAL_PADDLE_POSITION_Y,
         color: PADDLE_1_COLOR,
+        score: 0,
     };
 
     var p2 = {
@@ -60,11 +75,7 @@
     	positionX: null,  // Set once the canvas width is discovered
     	positionY: INITIAL_PADDLE_POSITION_Y,
     	color: PADDLE_2_COLOR,
-    };
-
-    var score = {
-    	rightPlayer: 0,
-    	leftPlayer: 0,
+    	score: 0,
     };
 
     // Only execute after the entire window has loaded.
@@ -88,6 +99,7 @@
         	{
                 drawShapes();
                 updateBallPositions();
+                computerAIPlayer();
         	}, 1000/framesPerSecond);  // 1000 ms / FPS
         
         // Add an event listener to check for updated mouse movement
@@ -100,24 +112,34 @@
             	function(evt) 
             	{
             		var mousePosition = calculateMousePosition(evt);
-            		if (mousePosition.x < middleOfCanvas)
+            		if (TWO_PLAYER)
+            		{
+            			if (mousePosition.x < middleOfCanvas)
+            		    {
+            		    	if (halfP1Height < mousePosition.y && mousePosition.y < canvas.height - halfP1Height)
+            		    	{
+            		    		p1.positionY = mousePosition.y - (p1.height / 2);
+            		    	}
+            		    }
+                        else if (mousePosition.x > middleOfCanvas)
+            		    {   
+            	        	// This logic keeps the paddles within the height of the canvas
+            	        	if (halfP2Height < mousePosition.y && mousePosition.y < canvas.height - halfP2Height)
+            	        	{
+            	        		p2.positionY = mousePosition.y - (halfP2Height);
+            	        	}
+            	        }
+            		}
+            		else
             		{
             			if (halfP1Height < mousePosition.y && mousePosition.y < canvas.height - halfP1Height)
-            			{
-            				p1.positionY = mousePosition.y - (p1.height / 2);
-            			}
-            		}
-            		else if (mousePosition.x > middleOfCanvas)
-            		{   
-            			// This logic keeps the paddles within the height of the canvas
-            			if (halfP2Height < mousePosition.y && mousePosition.y < canvas.height - halfP2Height)
-            			    {
-            			    	p2.positionY = mousePosition.y - (halfP2Height);
-            			    }
+            		    {
+            		 	    p1.positionY = mousePosition.y - (p1.height / 2);
+            		    }
             		}
             	}  // end function evt
             );  // End function call "addEventListener"
-        }
+        }  // End track by mouse
     }  // End Window onload()
     
     // This function is called every time an event is fired (i.e. mouse is moved)
@@ -132,35 +154,33 @@
     		y: mouseY
     	};  // Like python, can return variables packaged
     }
-    
+
     function updateBallPositionX()
     {
     	// Update the X position of the ball
     	ball.positionX = ball.positionX + ball.velocityX;
         
         // Boolean logic to detect when the ball hits the wall
-        var ballHitLeftWall = ball.positionX == ball.radius;
-        var ballHitRightWall = ball.positionX + ball.radius == canvas.width;
+        var ballHitLeftWall = ball.positionX <= ball.radius;
+        var ballHitRightWall = ball.positionX + ball.radius >= canvas.width;
         
         // Boolean logic to detect when the ball hits paddle 1
-        var ballInPaddleHeight_1 = ball.positionY >= p1.positionY  &&  ball.positionY <= p1.positionY + p1.height;
-        var ballHitLeftPaddle = (ball.positionX - ball.radius == p1.positionX + p1.width)  &&  ballInPaddleHeight_1;
+        var ballInPaddleHeight_1 = ball.positionY >= p1.positionY - PADDLE_END_PADDING  &&  ball.positionY <= p1.positionY + p1.height + PADDLE_END_PADDING;
+        var ballHitLeftPaddle = (ball.positionX - ball.radius <= p1.positionX + p1.width)  &&  ballInPaddleHeight_1;
         
         // Boolean logic to detect when the ball hits paddle 2
         var ballInPaddleHeight_2 = ball.positionY >= p2.positionY  &&  ball.positionY <= p2.positionY + p2.height;
-        var ballHitRightPaddle = (ball.positionX - ball.radius == p2.positionX - p2.width*2)  &&  ballInPaddleHeight_2;
+        var ballHitRightPaddle = (ball.positionX + ball.radius >= p2.positionX)  &&  ballInPaddleHeight_2;
         
         // Following logic = mutually exclusive because neither of these cases can be hit at the same time
     	if (ballHitLeftWall)  // Right Player Scored!
     	{
-            score.rightPlayer += 1;
-            console.log("Right player score = " + score.rightPlayer);
+            p2.score += 1;
             updateOnScore();
     	}
     	else if (ballHitRightWall)  // Left Player Scored!
     	{
-            score.leftPlayer += 1;
-            console.log("Left player score = " + score.leftPlayer);
+            p1.score += 1;
             updateOnScore();
     	}
         else if (ballHitLeftPaddle || ballHitRightPaddle) 
@@ -168,23 +188,55 @@
             ball.velocityX = -ball.velocityX;  // Reverse horizontal direction of the ball
         }
     }
-    
+
     function updateBallPositionY()
     {
     	// Update the Y position of the ball
         ball.positionY = ball.positionY + ball.velocityY;
+
+        // Boolean logic to detect when the ball hits paddle 1
+        var ballInPaddleHeight_1 = ball.positionY >= p1.positionY - PADDLE_END_PADDING  &&  ball.positionY <= p1.positionY + p1.height + PADDLE_END_PADDING;
+        var ballHitLeftPaddle = (ball.positionX - ball.radius <= p1.positionX + p1.width)  &&  ballInPaddleHeight_1;
+        
+        // Boolean logic to detect when the ball hits paddle 2
+        var ballInPaddleHeight_2 = ball.positionY >= p2.positionY  &&  ball.positionY <= p2.positionY + p2.height;
+        var ballHitRightPaddle = (ball.positionX + ball.radius >= p2.positionX)  &&  ballInPaddleHeight_2;
       
         // Bounce the ball vertically
-        if (ball.positionY + ball.radius == canvas.height)
+        if (ball.positionY + ball.radius >= canvas.height || ball.positionY <= ball.radius)
         {
-        	ball.velocityY = INITIAL_BALL_SPEED_Y;
+        	ball.velocityY = -ball.velocityY;
         }
-        else if (ball.positionY == ball.radius)
+
+        // Bounce the ball off of the paddle
+        var verticalMultiplier = 0.45;  // speeds or slows the ball depending on where on the paddle the ball hit
+        if (ballHitLeftPaddle)
         {
-        	ball.velocityY = -INITIAL_BALL_SPEED_Y;
+            ball.velocityY = (ball.positionY - (p1.positionY + p1.height / 2) ) * verticalMultiplier;
+        }
+        else if (ballHitRightPaddle)
+        {
+        	ball.velocityY = (ball.positionY - (p2.positionY + p2.height / 2) ) * verticalMultiplier;
         }
     }
     
+    function computerAIPlayer()
+    {
+    	// This should run when two player mode is off so a player can play the computer
+    	var midPaddle2 = p2.positionY + (p2.height / 2);
+    	for (var i = 0; i < 3; i++)
+    	{
+            if (midPaddle2 < (ball.positionY + ball.radius - 35))
+    	    {
+    	    	p2.positionY += 2;
+    	    }
+    	    else if (midPaddle2 > ball.positionY + 35)
+    	    {
+    	    	p2.positionY -= 2;
+    	    }
+    	}
+    }
+
     function updateBallPositions() 
     {
         updateBallPositionX();
@@ -195,8 +247,27 @@
     {
         ball.positionX = INITIAL_BALL_POSITION_X;
         ball.positionY = INITIAL_BALL_POSITION_Y;
-        ball.velocityX = -ball.velocityX;
-    	ball.velocityY = -ball.velocityY;
+        p2.positionY = INITIAL_BALL_POSITION_Y;
+        p2.positionX = canvas.width - p1.positionX - p2.width;
+        
+        // Reset speed magnitude as well as reverse direction (for both x and y directions)
+        if (ball.velocityX < 0)
+        {
+        	ball.velocityX = INITIAL_BALL_SPEED_X;
+        }
+        else if (ball.velocityX > 0)
+        {
+        	ball.velocityX = -INITIAL_BALL_SPEED_X;
+        }
+        
+        if (ball.velocityY < 0)
+        {
+        	ball.velocityY = INITIAL_BALL_SPEED_Y;
+        }
+        else if (ball.velocityX > 0)
+        {
+        	ball.velocityY = -INITIAL_BALL_SPEED_Y;
+        }
     }
 
     function colorRectangle(leftX, topY, width, height, color) 
@@ -213,13 +284,40 @@
     	canvasContext.fill();
     }
 
+    function scoreBoard()
+    {
+        canvasContext.font = "40px Verdana";
+        canvasContext.fillStyle = '#ed0056';
+    	canvasContext.fillText(p1.score, (canvas.width / 4), 100);
+    	canvasContext.fillText(p2.score, 3 * (canvas.width / 4), 100);
+    }
+
+    function sleep(seconds)
+    {
+    	var milliseconds = seconds * 1000
+    	return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
+
     function drawShapes() 
     {
+    	// Scoreboard 
+    	//colorRectangle(0, 0, canvas.width, canvas.height / 4, '#08b2d1');
+
+    	//Border between scoreboard and background of game
+    	//colorRectangle(0, canvas.height / 4, canvas.width, 3, 'blue');
+
     	// Create the background
+    	//colorRectangle(0, (canvas.height / 4) + 3, canvas.width, canvas.height, BACKGROUND_COLOR);
+
     	colorRectangle(0, 0, canvas.width, canvas.height, BACKGROUND_COLOR);
 
     	// Create the net
-    	colorRectangle(canvas.width / 2, NET_OFFSET, NET_THICKNESS, canvas.height - NET_OFFSET * 2, NET_COLOR);
+    	var spacing = 10;
+    	while (spacing < canvas.height)
+    	{
+    		colorRectangle(canvas.width / 2, spacing, NET_THICKNESS, NET_HEIGHT, NET_COLOR);
+    		spacing += (2 * NET_HEIGHT);
+    	}
         
         // Create paddle 1
     	colorRectangle(p1.positionX, p1.positionY, p1.width, p1.height, p1.color);
@@ -229,6 +327,34 @@
         
         // Create the ball
     	colorCircle(ball.positionX, ball.positionY, ball.radius, ball.color);
+
+    	scoreBoard();
+
+    	if (p1.score == WINNING_SCORE || p2.score == WINNING_SCORE)
+    	{
+    		var event = new Event('keypress');
+    		var keyPress = event.which || event.keyCode;
+            canvasContext.font = "40px Verdana";
+            canvasContext.fillStyle = '#ed0056';
+
+            if (p1.score == WINNING_SCORE)
+            {
+                canvasContext.fillText("Winner!", (canvas.width / 4) - 60, canvas.height - 100);
+            }
+            else if (p2.score == WINNING_SCORE)
+            {
+            	canvasContext.fillText("Winner!", 3 * (canvas.width / 4) - 60, canvas.height - 100);
+            }
+
+            ball.velocityY = 0;
+            ball.velocityX = 0;
+
+            sleep(5).then( () => {
+                p1.score = p2.score = 0;  // Reset both scores for the next game
+                ball.velocityY = INITIAL_BALL_SPEED_Y;
+          	    ball.velocityX = INITIAL_BALL_SPEED_X;
+            });  // Wait for 5 seconds before starting another game 
+    	}
     }
 	
 </script>  <!-- End Javascript -->
